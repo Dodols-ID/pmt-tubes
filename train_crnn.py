@@ -100,22 +100,25 @@ class MusicCRNN(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        # 1. Pass through visual layer
+        # 1. Fitur visual CNN -> [Batch, 64, 16, 64]
         x = self.cnn(x) 
         
-        # 2. Reshape matrix for sequence modeling
+        # 2. Reshape ketat sekuensial waktu
         batch_size, channels, height, width = x.size()
-        x = x.view(batch_size, channels * height, width) # Merges columns into vector features
-        x = x.permute(0, 2, 1) # Translates format to [Batch, Time-steps (Width), Features]
+        x = x.view(batch_size, channels * height, width) # [Batch, 1024, 64]
+        x = x.permute(0, 2, 1) # [Batch, 64 (Time-steps), 1024 (Features)]
         
-        # 3. Parse sequence
-        out, _ = self.rnn(x)
+        # 3. Masukkan ke GRU dan tangkap hidden state (h_n)
+        _, h_n = self.rnn(x) 
         
-        # 4. Grab output state of the very last sequence time-step (song conclusion)
-        out = out[:, -1, :] 
+        # Isolasi output arah maju dan mundur secara fisik dari layer teratas
+        forward_final = h_n[-2, :, :]  # [Batch, 128]
+        backward_final = h_n[-1, :, :] # [Batch, 128]
         
-        # 5. Fire prediction probabilities
-        return self.sigmoid(self.fc(out))
+        # Gabungkan menjadi berukuran pasti 256
+        final_features = torch.cat((forward_final, backward_final), dim=1)
+        
+        return self.sigmoid(self.fc(final_features))
 
 
 # =========================================================================
@@ -180,3 +183,5 @@ if __name__ == '__main__':
             running_loss += loss.item()
             
         print(f"Epoch [{epoch+1}/5] Completed - Average Loss: {running_loss / len(train_loader):.4f}")
+    torch.save(model.state_dict(), 'model_mbti_crnn.pth')
+    print("Bobot model berhasil disimpan!")

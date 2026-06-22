@@ -42,27 +42,29 @@ mbti_mapping = {
 
 # 3. Daftar Target Playlist (Silakan isi ID playlist yang sudah dibersihkan buntutnya)
 target_playlists = {
-    # 'INFJ': '6eKkAqd6nrZfoTC8QZUt7w',
-    # 'INFP': 'ISI_ID_PLAYLIST_INFP',
-    # 'ENFJ': 'ISI_ID_PLAYLIST_ENFJ',
-    # 'ENFP': 'ISI_ID_PLAYLIST_ENFP',
-    # 'INTJ': 'ISI_ID_PLAYLIST_INTJ',
-    # 'INTP': '54YCS9D2dr1AisRScAx8gl',
-    # 'ENTJ': '2sMGWHpGRVt6z8BsMfGbHd',
+    'INFJ': '6eKkAqd6nrZfoTC8QZUt7w',
+    'INFP': '7jcLRVhhQtpZpMVBnffYU3',
+    'ENFJ': '1eVgLeDoHD123LB6VldjGY',
+    'ENFP': '4qvyBmM6lQ6uwIyDfZ4Oq3',
+    'INTJ': '650poOgnPqhCG2uu3lJta2',
+    'INTP': '54YCS9D2dr1AisRScAx8gl',
+    'ENTJ': '2sMGWHpGRVt6z8BsMfGbHd',
     'ENTP': '0alz3ht2DfCz8GsDEFYSvg',
-    # 'ISTJ': 'ISI_ID_PLAYLIST_ISTJ',
-    # 'ISFJ': 'ISI_ID_PLAYLIST_ISFJ',
-    # 'ESTJ': 'ISI_ID_PLAYLIST_ESTJ',
-    # 'ESFJ': 'ISI_ID_PLAYLIST_ESFJ',
-    # 'ISTP': 'ISI_ID_PLAYLIST_ISTP',
-    # 'ISFP': 'ISI_ID_PLAYLIST_ISFP',
-    # 'ESTP': 'ISI_ID_PLAYLIST_ESTP',
-    # 'ESFP': 'ISI_ID_PLAYLIST_ESFP',
+    'ISTJ': '1aGR6X8kdHWWy5M2nNFoWy',
+    'ISFJ': '0lYllEZHsSAuVE0bBsYTvA',
+    'ESTJ': '1s59H8zfMEUPQx0Wvk5TI9',
+    'ESFJ': '6PsawaiOyvzoNX6h6B8DUE',
+    'ISTP': '2jIk3SeeRy45h3XJY8yOSE',
+    'ISFP': '6FdFbQ8QI8KO8mCwgekYY7',
+    'ESTP': '65r8dT97EcHxBl2pW0jhzx',
+    'ESFP': '1irl5I1VRnwSJeiDQGVxRq',
 }
 
 all_songs = []
 
-# 4. Loop Otomatisasi untuk 16 Playlist
+from selenium.webdriver.common.keys import Keys # <--- PASTIKAN UNTUK IMPORT INI DI ATAS
+
+# 4. Loop Otomatisasi dengan Dinamis Real-Time Extraction (Menyapu Semua Lagu)
 for mbti_type, playlist_id in target_playlists.items():
     if playlist_id.startswith('ISI_ID_'):
         print(f"Skipping {mbti_type} karena ID playlist belum diisi.")
@@ -71,37 +73,65 @@ for mbti_type, playlist_id in target_playlists.items():
     url = f"https://open.spotify.com/playlist/{playlist_id}"
     print(f"\nMemuat halaman Spotify untuk tipe: {mbti_type}...")
     driver.get(url)
+    time.sleep(7) # Beri waktu ekstra render awal halaman
     
-    # Beri waktu 7 detik agar JavaScript merender daftar lagu
-    time.sleep(7)
+    unique_titles = []
+    scroll_attempts = 0
+    max_attempts = 15 # Batas toleransi stagnansi gulir sebelum dianggap "habis"
     
-    try:
-        # Ekstrak elemen teks lagu yang mengarah ke link /track/
-        track_elements = driver.find_elements(By.XPATH, "//a[contains(@href, '/track/')]")
-        titles = [el.text for el in track_elements if el.text != ""]
+    print(f"Memulai pemindaian total untuk seluruh isi playlist {mbti_type}...")
+    
+    while scroll_attempts < max_attempts:
+        # HARD GUARDRAIL: Kunci target hanya pada baris ber-atribut aria-rowindex (Playlist Resmi)
+        track_elements = driver.find_elements(By.XPATH, "//*[@aria-rowindex]//a[contains(@href, '/track/')]")
         
-        # Bersihkan data ganda jika Selenium menangkap elemen double
-        unique_titles = list(dict.fromkeys(titles))
+        new_songs_found = 0
+        for el in track_elements:
+            try:
+                title_text = el.text
+                if title_text != "" and title_text not in unique_titles:
+                    unique_titles.append(title_text)
+                    new_songs_found += 1
+            except Exception:
+                continue
         
-        # Ambil maksimal 13 lagu agar data seimbang (balance)
-        sliced_titles = unique_titles[:49]
-        print(f"-> Berhasil mendapatkan {len(sliced_titles)} lagu untuk {mbti_type}")
+        print(f"-> Terkumpul: {len(unique_titles)} lagu...")
         
-        for title in sliced_titles:
-            # Otomatis mapping biner berdasarkan kamus mbti_mapping
-            song_data = {
-                'Track Name': title,
-                'MBTI': mbti_type,
-                'E_I': mbti_mapping[mbti_type]['E_I'],
-                'N_S': mbti_mapping[mbti_type]['N_S'],
-                'T_F': mbti_mapping[mbti_type]['T_F'],
-                'J_P': mbti_mapping[mbti_type]['J_P']
-            }
-            all_songs.append(song_data)
-            
-    except Exception as e:
-        print(f"Gagal mengekstrak playlist {mbti_type}: {e}")
+        # Simulasi gulir halus menggunakan ARROW_DOWN agar DOM merender baris demi baris
+        if track_elements:
+            try:
+                last_visible_element = track_elements[-1]
+                for _ in range(8): # Dinaikkan ke 8 kali panah bawah agar pergeseran konstan
+                    last_visible_element.send_keys(Keys.ARROW_DOWN)
+                time.sleep(1.5)
+            except Exception:
+                try:
+                    for _ in range(8):
+                        driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ARROW_DOWN)
+                    time.sleep(1.5)
+                except Exception:
+                    pass
+        
+        # LOGIKA DINAMIS: Jika tidak ada lagu baru yang terdeteksi, naikkan angka counter stagnansi
+        if new_songs_found == 0:
+            scroll_attempts += 1
+        else:
+            scroll_attempts = 0 # Reset ke 0 jika angka total lagu masih sukses mendobrak maju
 
+    print(f"[SUKSES] Seluruh playlist selesai disapu! Total final didapat: {len(unique_titles)} lagu resmi untuk {mbti_type}")
+    
+    # Loop pengemasan data seluruh lagu tanpa dipotong slice (Murni dinamis)
+    for title in unique_titles:
+        song_data = {
+            'Track Name': title,
+            'MBTI': mbti_type,
+            'E_I': mbti_mapping[mbti_type]['E_I'],
+            'N_S': mbti_mapping[mbti_type]['N_S'],
+            'T_F': mbti_mapping[mbti_type]['T_F'],
+            'J_P': mbti_mapping[mbti_type]['J_P']
+        }
+        all_songs.append(song_data)
+        
 # 5. Tutup Browser dan Simpan ke CSV tunggal
 driver.quit()
 
