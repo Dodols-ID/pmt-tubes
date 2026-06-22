@@ -42,13 +42,13 @@ mbti_mapping = {
 
 # 3. Daftar Target Playlist (Silakan isi ID playlist yang sudah dibersihkan buntutnya)
 target_playlists = {
-    'INFJ': '6eKkAqd6nrZfoTC8QZUt7w',
+    # 'INFJ': '6eKkAqd6nrZfoTC8QZUt7w',
     # 'INFP': 'ISI_ID_PLAYLIST_INFP',
     # 'ENFJ': 'ISI_ID_PLAYLIST_ENFJ',
     # 'ENFP': 'ISI_ID_PLAYLIST_ENFP',
     # 'INTJ': 'ISI_ID_PLAYLIST_INTJ',
-    'INTP': '54YCS9D2dr1AisRScAx8gl',
-    'ENTJ': '2sMGWHpGRVt6z8BsMfGbHd',
+    # 'INTP': '54YCS9D2dr1AisRScAx8gl',
+    # 'ENTJ': '2sMGWHpGRVt6z8BsMfGbHd',
     'ENTP': '0alz3ht2DfCz8GsDEFYSvg',
     # 'ISTJ': 'ISI_ID_PLAYLIST_ISTJ',
     # 'ISFJ': 'ISI_ID_PLAYLIST_ISFJ',
