@@ -157,18 +157,26 @@ if __name__ == '__main__':
 
     # Initialize model objects
     model = MusicCRNN(num_classes=4).to(device)
-    
-    # BCELoss is mathematically required for independent binary multi-label classification
     criterion = nn.BCELoss() 
+    
+    # 1. Mulai dengan basis LR awal yang ideal
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # Simple execution loop mock run
+    # 2. INISIALISASI LR SCHEDULER (ReduceLROnPlateau)
+    # mode='min': karena kita ingin meminimalkan nilai Loss
+    # factor=0.5: potong LR menjadi setengahnya jika macet (0.001 -> 0.0005)
+    # patience=2: tunggu selama 2 epoch stagnan sebelum memotong LR
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
+
     model.train()
-    print("Beginning CRNN training loop cycles...")
-    for epoch in range(5):  # 5 sample test epochs
+    print("Beginning CRNN training loop cycles with dynamic LR Scheduler...")
+    
+    # Kita naikkan sampel ke 10-15 epoch agar scheduler memiliki ruang memantau plateau
+    TOTAL_EPOCHS = 15 
+    
+    for epoch in range(TOTAL_EPOCHS):
         running_loss = 0.0
         for batch_idx, (images, labels) in enumerate(train_loader):
-            # Move data directly to target execution core
             images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
             
             # Forward path
@@ -178,10 +186,24 @@ if __name__ == '__main__':
             # Backward path optimization execution
             optimizer.zero_grad()
             loss.backward()
-            optimizer.step()
             
+            # 3. ANTI-GRADIENT EXPLOSION: Amankan turunan matriks via Gradient Clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
+            optimizer.step()
             running_loss += loss.item()
             
-        print(f"Epoch [{epoch+1}/5] Completed - Average Loss: {running_loss / len(train_loader):.4f}")
+        # Hitung rata-rata loss murni di epoch ini
+        epoch_loss = running_loss / len(train_loader)
+        
+        # 4. UPDATE LR SCHEDULER: Berikan nilai epoch_loss ke scheduler untuk dievaluasi
+        scheduler.step(epoch_loss)
+        
+        # Ambil nilai LR aktif saat ini dari optimizer untuk dipantau di terminal
+        current_lr = optimizer.param_groups[0]['lr']
+        
+        print(f"Epoch [{epoch+1}/{TOTAL_EPOCHS}] Completed - Average Loss: {epoch_loss:.4f} | Active LR: {current_lr}")
+
+    # Simpan bobot otak model final
     torch.save(model.state_dict(), 'model_mbti_crnn.pth')
     print("Bobot model berhasil disimpan!")

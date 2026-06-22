@@ -42,22 +42,22 @@ mbti_mapping = {
 
 # 3. Daftar Target Playlist (Silakan isi ID playlist yang sudah dibersihkan buntutnya)
 target_playlists = {
-    'INFJ': '6eKkAqd6nrZfoTC8QZUt7w',
-    'INFP': '7jcLRVhhQtpZpMVBnffYU3',
-    'ENFJ': '1eVgLeDoHD123LB6VldjGY',
-    'ENFP': '4qvyBmM6lQ6uwIyDfZ4Oq3',
-    'INTJ': '650poOgnPqhCG2uu3lJta2',
-    'INTP': '54YCS9D2dr1AisRScAx8gl',
-    'ENTJ': '2sMGWHpGRVt6z8BsMfGbHd',
+    # 'INFJ': '6eKkAqd6nrZfoTC8QZUt7w',
+    # 'INFP': '7jcLRVhhQtpZpMVBnffYU3',
+    # 'ENFJ': '1eVgLeDoHD123LB6VldjGY',
+    # 'ENFP': '4qvyBmM6lQ6uwIyDfZ4Oq3',
+    # 'INTJ': '650poOgnPqhCG2uu3lJta2',
+    # 'INTP': '54YCS9D2dr1AisRScAx8gl',
+    # 'ENTJ': '2sMGWHpGRVt6z8BsMfGbHd',
     'ENTP': '0alz3ht2DfCz8GsDEFYSvg',
-    'ISTJ': '1aGR6X8kdHWWy5M2nNFoWy',
-    'ISFJ': '0lYllEZHsSAuVE0bBsYTvA',
-    'ESTJ': '1s59H8zfMEUPQx0Wvk5TI9',
-    'ESFJ': '6PsawaiOyvzoNX6h6B8DUE',
-    'ISTP': '2jIk3SeeRy45h3XJY8yOSE',
-    'ISFP': '6FdFbQ8QI8KO8mCwgekYY7',
-    'ESTP': '65r8dT97EcHxBl2pW0jhzx',
-    'ESFP': '1irl5I1VRnwSJeiDQGVxRq',
+    # 'ISTJ': '1aGR6X8kdHWWy5M2nNFoWy',
+    # 'ISFJ': '0lYllEZHsSAuVE0bBsYTvA',
+    # 'ESTJ': '1s59H8zfMEUPQx0Wvk5TI9',
+    # 'ESFJ': '6PsawaiOyvzoNX6h6B8DUE',
+    # 'ISTP': '2jIk3SeeRy45h3XJY8yOSE',
+    # 'ISFP': '6FdFbQ8QI8KO8mCwgekYY7',
+    # 'ESTP': '65r8dT97EcHxBl2pW0jhzx',
+    # 'ESFP': '1irl5I1VRnwSJeiDQGVxRq',
 }
 
 all_songs = []
@@ -132,12 +132,19 @@ for mbti_type, playlist_id in target_playlists.items():
         }
         all_songs.append(song_data)
         
-# 5. Tutup Browser dan Simpan ke CSV tunggal
+# 5. Tutup Browser dan Simpan ke CSV (Menggunakan Jalur Direktori Aktif)
 driver.quit()
 
 if all_songs:
+    import os # Pastikan modul OS aktif
+    
+    # Ambil lokasi folder tempat terminal kamu sedang aktif saat ini
+    current_dir = os.getcwd()
+    
+    csv_save_path = os.path.join(current_dir, 'dataset_mbti_musik.csv')
+
     df = pd.DataFrame(all_songs)
-    df.to_csv('dataset_mbti_musik.csv', index=False)
-    print(f"\n[SUKSES] File 'dataset_mbti_musik.csv' berhasil dibuat dengan total {len(df)} lagu!")
-else:
-    print("\n[GAGAL] Tidak ada data lagu yang berhasil dikumpulkan.")
+    df.to_csv(csv_save_path, index=False)
+    
+    print(f"\n[SUKSES] File berhasil dibuat!")
+    print(f"[LOKASI] CSV disimpan di: {csv_save_path}")
