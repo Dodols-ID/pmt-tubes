@@ -84,7 +84,7 @@ for mbti_type, playlist_id in target_playlists.items():
         unique_titles = list(dict.fromkeys(titles))
         
         # Ambil maksimal 13 lagu agar data seimbang (balance)
-        sliced_titles = unique_titles[:13]
+        sliced_titles = unique_titles[:49]
         print(f"-> Berhasil mendapatkan {len(sliced_titles)} lagu untuk {mbti_type}")
         
         for title in sliced_titles:

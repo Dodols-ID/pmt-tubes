@@ -139,7 +139,12 @@ def batch_generate_melspectrogram(target_folder_path, n_mels=128, frame_size=204
     except Exception as e:
         print(f"[ERROR] Gagal mengakses atau membaca folder: {e}")
         return
-        
+    
+    # --- TAMBAHKAN PEMBATASAN DI SINI ---
+    LIMIT_FILE = 49  # Ganti angka ini sesuai jumlah maksimal lagu yang mau kamu proses
+    audio_files = audio_files[:LIMIT_FILE]  # Mengambil file dari indeks 0 sampai LIMIT_FILE
+    # ------------------------------------
+    
     total_files = len(audio_files)
     
     # Validasi pembatas
